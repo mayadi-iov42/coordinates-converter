@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSV Coordinate Converter</title>
+</head>
+<body>
+<h1>CSV Coordinate Converter</h1>
+<p>The CSV file has to have the following structure (with the exact format of coordinates):</p>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Longitude</th>
+      <th>Latitude</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>E 11°59'01.9''</td>
+      <td>N 0°10'05.22''</td>
+    </tr>
+    <tr>
+      <td>E 12°00'01.31''</td>
+      <td>N 0°12'49,59''</td>
+    </tr>
+    <tr>
+      <td>E 11°59'10.10''</td>
+      <td>N 0°14'30.82''</td>
+    </tr>
+    <tr>
+      <td>E 11°56'52.54''</td>
+      <td>N 0°14'08.22''</td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<input type="file" id="fileInput" accept=".csv"><br><br>
+<button onclick="convertCSV()">Convert to GeoJSON</button><br><br>
+<button onclick="onDownload()">Download GeoJSON (.json file)</button><br><br>
+<div id="output"></div>
+
+<script>
+var geoJsonPrefix = '{"type": "FeatureCollection","features":[{"type": "Feature","properties": {},"geometry": {"coordinates": [['
+var geoJsonSuffix = ']],"type": "Polygon"}}]}'
+var geoJsonFile = geoJsonPrefix
+var docName = ""
+
+function convertCSV() {
+    var fileInput = document.getElementById('fileInput');
+    var file = fileInput.files[0];
+
+    docName = file.name
+    
+    if (!file) {
+        alert('Please select a file.');
+        return;
+    }
+    
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var contents = e.target.result;
+        var lines = contents.split('\n');
+        var output = document.getElementById('output');
+
+        //output.append(<h2>Hello</h2>)
+        output.appendChild(document.createTextNode(geoJsonPrefix))
+        output.appendChild(document.createElement("br"))
+
+        var lastCoordinateLongitudeInDD = ""
+        var lastCoordinateLatitudeInDD = ""
+
+        //= '<h2>Decimal Coordinates:</h2>';
+
+        for (var i = 1; i < lines.length; i++) { // start from 1 to skip header
+
+            console.log("Got value: " + lines[i])
+
+            var values = lines[i].split(',');
+
+            if (values.length >= 2) {
+                var longitudeDMS = values[0].trim();
+                var latitudeDMS = values[1].trim();
+                var longitudeDecimal = convertDMSToDecimal(longitudeDMS);
+                var latitudeDecimal = convertDMSToDecimal(latitudeDMS);
+
+                if (i == 1) {
+                    lastCoordinateLongitudeInDD = longitudeDecimal
+                    lastCoordinateLatitudeInDD = latitudeDecimal
+                }
+
+                geoJsonFile += "[" + longitudeDecimal + "," + latitudeDecimal + "],"
+
+                output.appendChild(document.createTextNode('[' + longitudeDecimal + ',' + latitudeDecimal + '],'))
+                output.appendChild(document.createElement("br"))
+            }
+        }
+
+        geoJsonFile += '[' + lastCoordinateLongitudeInDD + ',' + lastCoordinateLatitudeInDD + ']'
+        output.appendChild(document.createTextNode('[' + lastCoordinateLongitudeInDD + ',' + lastCoordinateLatitudeInDD + ']'))
+        output.appendChild(document.createElement("br"))
+
+        geoJsonFile += geoJsonSuffix
+        output.appendChild(document.createTextNode(geoJsonSuffix))
+    };
+    reader.readAsText(file);
+}
+
+function convertDMSToDecimal(coordinate) {
+    //console.log("Converting " + coordinate + " to DD")
+
+    // Parse the coordinate using a regular expression
+    var parts = coordinate.split(/[°''’]/);
+    var firstPart = parts[0].split(" ")
+    var hemisphere = firstPart[0]
+
+    console.log(parts)
+
+    for (var i = 1; i < parts.length; i++) {
+        console.log(parts[i])
+    }
+    
+    // Extract degrees, minutes, seconds, and hemisphere
+    var degrees = parseFloat(firstPart[1]);
+    var minutes = parseFloat(parts[1]);
+    var seconds = parseFloat(parts[2]);
+
+    {{/* console.log("H: " + hemisphere)
+    console.log("D: " + degrees)
+    console.log("M: " + minutes)
+    console.log("S: " + seconds) */}}
+
+    // Determine the sign based on hemisphere
+    var sign = 1;
+    if (hemisphere == 'S' || hemisphere == 'W') {
+        sign = -1;
+    }
+
+    // Convert to decimal degrees and apply sign
+    var decimalDegrees = sign * (degrees + minutes / 60 + seconds / 3600);
+
+    var string = "degrees: " + degrees + "; minutes: " + minutes + "; seconds: " + seconds + "; hemisphere: " + hemisphere;
+    console.log(string);
+
+    return decimalDegrees;
+}
+
+function download(content, fileName, contentType) {
+    const a = document.createElement("a");
+    const file = new Blob([content], { type: contentType });
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
+}
+
+function onDownload(){
+    const jsonGeoJson = JSON.parse(geoJsonFile)
+    download(JSON.stringify(jsonGeoJson), docName.slice(0, -4) + ".json", "text/plain");
+}
+
+</script>
+</body>
+</html>
