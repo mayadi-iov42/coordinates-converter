@@ -1,0 +1,11 @@
+body {
+    padding: 16px;
+}
+
+.coordinatesTextField {
+    min-height: 300px;
+}
+
+.coordinateInput {
+    padding-right: 0px;
+}
