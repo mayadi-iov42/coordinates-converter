@@ -1,0 +1,48 @@
+body {
+	padding: 16px;
+}
+
+.coordinatesTextField {
+	min-height: 300px;
+}
+
+.coordinateInput {
+	padding-right: 0px;
+}
+
+.leaflet-container {
+	height: 80vh;
+	width: 100%;
+}
+
+.map-marker {
+	height: 20px;
+	width: 20px;
+}
+
+.map-marker-icon i {
+	height: 20px;
+	width: 20px;
+	display: block;
+}
+
+.callout {
+	padding: 20px;
+	margin: 20px 0;
+	border: 1px solid #eee;
+	border-left-width: 5px;
+	border-radius: 3px;
+	h4 {
+		margin-top: 0;
+		margin-bottom: 5px;
+	}
+	p:last-child {
+		margin-bottom: 0;
+	}
+	code {
+		border-radius: 3px;
+	}
+	& + .bs-callout {
+		margin-top: -5px;
+	}
+}
